@@ -16,6 +16,9 @@
 </style>
 <body>
 	<div id="app">
+        <div>
+            <button @click="fnLogout">로그아웃</button>
+        </div>
 		<table>
             <tr>
                 <th>번호</th>
@@ -23,8 +26,8 @@
                 <th>가격</th>
                 <th>종류</th>
                 <th>재고</th>
-                <th>수정</th>
-                <th>삭제</th>
+                <th v-if="sessionStatus == 'A'">수정</th>
+                <th v-if="sessionStatus == 'A'">삭제</th>
             </tr>
             <tr v-for="item in list">
                 <td>{{item.productId}}</td>
@@ -32,8 +35,8 @@
                 <td>{{item.price}}</td>
                 <td>{{item.category}}</td>
                 <td>{{item.stock}}</td>
-                <td><button @click="fnEdit(item.productId)">수정</button></td>
-                <td><button @click="fnRemove(item.productId)">삭제</button></td>
+                <td v-if="sessionStatus == 'A'"><button @click="fnEdit(item.productId)">수정</button></td>
+                <td v-if="sessionStatus == 'A'"><button @click="fnRemove(item.productId)">삭제</button></td>
             </tr>
         </table>
         <div>
@@ -56,7 +59,8 @@
                 info : {},
                 index : 1, // 전체 페이지
                 pageSize: 5, // 한페이지에 보여 줄 개수
-                page : 1 // 현재 페이지
+                page : 1, // 현재 페이지
+                sessionStatus : ""
             };
         },
         methods: {
@@ -91,11 +95,41 @@
             },
             fnEdit(productId){
                 location.href = "product-add.html?productId="+productId;
+            },
+            fnLogout() {
+                let self = this;
+				fetch("http://localhost:3000/user/logout", {
+                    method : "GET",
+                    credentials : "include",
+                })
+                    .then( res => res.json() )
+                    .then( data => {
+                        console.log(data);
+                        alert(data.message);
+                        location.href = "../day4/login.html";
+                        
+                    })
             }
         },
         mounted() {
             var self = this;
-            self.fnGetList();
+            fetch("http://localhost:3000/user/info",{
+                method : "GET",
+                credentials : "include"
+            })
+            .then( res=>res.json() )
+            .then( data => {
+                console.log(data);
+                if(!data.isLogin){
+                    alert("로그인 후 이용해 주세요");
+                    location.href = "../day4/login.html";
+                } else {
+                    self.sessionStatus = data.user.sessionStatus;
+                    self.fnGetList();
+                }
+            })
+
+            
         }
     });
     app.mount('#app');
